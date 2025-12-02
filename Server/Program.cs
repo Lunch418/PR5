@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Server.Classes;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -14,8 +16,7 @@ namespace Server
         static int ServerPort;
         static int MaxClient;
         static int Duration;
-        static List<Client> AllClients = new List<Client>();
-
+        static List<Classes.Client> AllClients = new List<Classes.Client>();
         static void Main(string[] args)
         {
             OnSettings();
@@ -25,7 +26,6 @@ namespace Server
 
             Thread tDisconnect = new Thread(CheckDisconnectClient);
             tDisconnect.Start();
-
             while (true)
             {
                 SetCommand();
@@ -51,12 +51,11 @@ namespace Server
                 Thread.Sleep(1000);
             }
         }
-
         public static void GetStatus()
         {
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine($"Count Clients: {AllClients.Count}");
-            foreach (Client Client in AllClients)
+            foreach (Classes.Client Client in AllClients)
             {
                 int Duration = (int)DateTime.Now.Subtract(Client.DateConnect).TotalSeconds;
                 Console.ForegroundColor = ConsoleColor.White;
@@ -64,8 +63,9 @@ namespace Server
                     $"duration: {Duration}"
                     );
             }
-        }
 
+
+        }
         public static void SetCommand()
         {
             Console.ForegroundColor = ConsoleColor.Red;
@@ -79,14 +79,87 @@ namespace Server
             else if (Command.Contains("/disconnect")) DisconnectServer(Command);
             else if (Command == "/status") GetStatus();
             else if (Command == "/help") Help();
+            else if (Command == "/ban") Ban(Command);
+            else if (Command == "/unblock") Unblock(Command);
         }
 
+        public static void Unblock(string command)
+        {
+            Console.Write("Login: ");
+            string login = Console.ReadLine();
+            if (string.IsNullOrEmpty(login))
+            {
+                Console.WriteLine("Login not specified");
+                return;
+            }
+
+            using var db = new DbContexted();
+
+            if (!db.Users.Any(x => x.Login == login))
+            {
+                Console.WriteLine("User not found");
+                return;
+            }
+
+            var blackListRecord = db.blackLists.FirstOrDefault(x => x.Login == login);
+
+            if (blackListRecord == null)
+            {
+                Console.WriteLine("User is not banned");
+                return;
+            }
+
+            int recordId = blackListRecord.Id;
+
+            var recordToDelete = db.blackLists.Find(recordId);
+            if (recordToDelete != null)
+            {
+                db.blackLists.Remove(recordToDelete);
+                db.SaveChanges();
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"User {login} unbanned");
+                Console.ResetColor();
+            }
+        }
+
+        public static void Ban(string command)
+        {
+
+            Console.Write("Login: ");
+            string login = Console.ReadLine();
+            if (string.IsNullOrEmpty(login))
+            {
+                Console.WriteLine("Login not specified");
+                return;
+            }
+
+            using var db = new DbContexted();
+
+            if (!db.Users.Any(x => x.Login == login))
+            {
+                Console.WriteLine("User does not exist");
+                return;
+            }
+
+            if (db.blackLists.Any(x => x.Login == login))
+            {
+                Console.WriteLine("User already banned");
+                return;
+            }
+
+            db.blackLists.Add(new BlackList { Login = login });
+            db.SaveChanges();
+
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"User {login} added to blacklist");
+        }
         static void DisconnectServer(string сommand)
         {
             try
             {
                 string Token = сommand.Replace("/disconnect", "").Trim();
-                Client DisconnectClient = AllClients.Find(x => x.Token == Token);
+                Classes.Client DisconnectClient = AllClients.Find(x => x.Token == Token);
                 AllClients.Remove(DisconnectClient);
 
                 Console.ForegroundColor = ConsoleColor.White;
@@ -97,6 +170,7 @@ namespace Server
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Error: " + exp.Message);
             }
+
         }
 
         public static void Help()
@@ -194,6 +268,8 @@ namespace Server
 
         static string SetCommandClient(string Command)
         {
+
+
             if (Command.StartsWith("/connect"))
             {
                 string[] parts = Command.Split(' ');
@@ -202,18 +278,24 @@ namespace Server
                 string login = parts[1];
                 string password = parts[2];
 
-                // Простая проверка (без БД)
-                if (login != "admin" || password != "admin")
+                using var db = new DbContexted();
+
+                if (db.blackLists.Any(x => x.Login == login))
+                    return "/banned";
+
+                var user = db.Users.FirstOrDefault(x => x.Login == login && x.Password == password);
+                if (user == null)
                     return "/auth_fail";
 
                 if (AllClients.Count < MaxClient)
                 {
-                    Client newClient = new Client();
+                    Classes.Client newClient = new Classes.Client();
                     AllClients.Add(newClient);
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"New client connection: " + newClient.Token);
 
                     return newClient.Token;
+
                 }
                 else
                 {
@@ -221,14 +303,16 @@ namespace Server
                     Console.WriteLine($"There is not enougt space on the license server");
                     return "/limit";
                 }
+
+
             }
             else
             {
                 Client c = AllClients.Find(x => x.Token == Command);
                 return c != null ? "/connect" : "/disconnect";
             }
+            return null;
         }
-
         public static void ConnectServer()
         {
             IPEndPoint EndPoint = new IPEndPoint(ServerIpAddress, ServerPort);
@@ -238,7 +322,6 @@ namespace Server
                 ProtocolType.Tcp);
             SocketListener.Bind(EndPoint);
             SocketListener.Listen(10);
-
             while (true)
             {
                 Socket Handler = SocketListener.Accept();
@@ -250,18 +333,7 @@ namespace Server
 
                 Handler.Send(Encoding.UTF8.GetBytes(Response));
             }
-        }
-    }
 
-    public class Client
-    {
-        public string Token { get; set; }
-        public DateTime DateConnect { get; set; }
-
-        public Client()
-        {
-            Token = Guid.NewGuid().ToString();
-            DateConnect = DateTime.Now;
         }
     }
 }
