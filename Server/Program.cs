@@ -15,6 +15,8 @@ namespace Server
         static int ServerPort;
         static int MaxClient;
         static int Duration;
+
+        static List<Classes.Client> AllClients = new List<Classes.Client>();
         static void Main(string[] args)
         {
             Console.WriteLine("");
@@ -29,9 +31,27 @@ namespace Server
                 File.Delete(Directory.GetCurrentDirectory() + "/.config");
                 OnSettings();
             }
-            else if (Command == "/connect") ConnectServer();
+            else if (Command.Contains("/disconnect")) DisconnectServer(Command);
             else if (Command == "/status") GetStatus();
             else if (Command == "/help") Help();
+        }
+
+        static void DisconnectServer(string command)
+        {
+            try
+            {
+                string Token = command.Replace("/disconnect", "");
+                Classes.Client.DisconnectClient = AllClients.Find(x => x.Token == Token);
+                AllClients.Remove(DisconnectClient);
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Client: {Token} disconnect from server");
+            }
+            catch (Exception exp) {
+            
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Error: " + exp.Message);
+            }
         }
         public static void GetStatus()
         {
@@ -144,9 +164,9 @@ namespace Server
             Console.WriteLine(" - set initial settings ");
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write("/connect");
+            Console.Write("/disconnect");
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(" - connection to the server ");
+            Console.WriteLine(" - disconnect users from the server ");
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("/status");
