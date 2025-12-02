@@ -55,8 +55,17 @@ namespace Server
         }
         public static void GetStatus()
         {
-            int Duration = (int)DateTime.Now.Subtract(ClientDateConnection).TotalSeconds;
-            Console.ForegroundColor = ConsoleColor.White;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Count clients: {AllClients.Count}");
+
+            foreach (Classes.Client Client in AllClients){
+                int Duration = (int)DateTime.Now.Subtract(Client.DateConnect).TotalSeconds;
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"Clients: {Client.Token}, time connection: {Client.DateConnect.ToString("HH:mm:ss dd.MM")}, "  + 
+                    $" duration: {Duration}");
+            }
+
+            
 
         }
         public static void ConnectServer()
