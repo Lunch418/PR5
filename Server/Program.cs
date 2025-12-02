@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Server.Classes;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -68,35 +69,66 @@ namespace Server
             
 
         }
-         static void ConnectServer()
+        public static void ConnectServer()
         {
-            Console.ForegroundColor = ConsoleColor.White;
+            IPEndPoint EndPoint = new IPEndPoint(ServerIpAddress, ServerPort);
+            Socket SocketListener = new Socket(
+                AddressFamily.InterNetwork,
+                SocketType.Stream,
+                ProtocolType.Tcp);
+            SocketListener.Bind(EndPoint);
+            SocketListener.Listen(10);
 
-            Console.Write("Login: ");
-            string login = Console.ReadLine();
-
-            Console.Write("Password: ");
-            string password = Console.ReadLine();
-
-            IPEndPoint endPoint = new IPEndPoint(ServerIpAddress, ServerPort);
-            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect(endPoint);
-
-            string msg = $"/connect {login} {password}";
-            socket.Send(Encoding.UTF8.GetBytes(msg));
-
-            byte[] buffer = new byte[1024];
-            int size = socket.Receive(buffer);
-            string response = Encoding.UTF8.GetString(buffer, 0, size);
-
-            if (response == "/auth_fail")
+            while (true)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Неверный логин или пароль.");
-                return;
+                Socket Handler = SocketListener.Accept();
+                byte[] Bytes = new byte[10485760];
+                int ByteRec = Handler.Receive(Bytes);
+
+                string Message = Encoding.UTF8.GetString(Bytes, 0, ByteRec);
+                string Response = SetCommandClient(Message);
+
+                Handler.Send(Encoding.UTF8.GetBytes(Response));
             }
         }
-         static void OnSettings()
+
+        static string SetCommandClient(string Command)
+        {
+            if (Command.StartsWith("/connect"))
+            {
+                string[] parts = Command.Split(' ');
+                if (parts.Length != 3) return "/auth_fail";
+
+                string login = parts[1];
+                string password = parts[2];
+
+              
+                if (login != "admin" || password != "admin")
+                    return "/auth_fail";
+
+                if (AllClients.Count < MaxClient)
+                {
+                    Client newClient = new Client();
+                    AllClients.Add(newClient);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"New client connection: " + newClient.Token);
+
+                    return newClient.Token;
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"There is not enougt space on the license server");
+                    return "/limit";
+                }
+            }
+            else
+            {
+                Client c = AllClients.Find(x => x.Token == Command);
+                return c != null ? "/connect" : "/disconnect";
+            }
+        }
+        static void OnSettings()
         {
             string Path = Directory.GetCurrentDirectory() + "/.config";
             string IpAddress = "";
