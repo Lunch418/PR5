@@ -40,6 +40,8 @@ namespace Client
         }
         public static void ConnectServer()
         {
+            //=====================================================================
+            //=====================================================================
             Console.ForegroundColor = ConsoleColor.White;
 
             Console.Write("Login: ");
@@ -65,6 +67,8 @@ namespace Client
                 Console.WriteLine("Неверный логин или пароль.");
                 return;
             }
+            //=====================================================================
+            //=====================================================================
         }
         public static void GetStatus()
         {

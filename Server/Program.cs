@@ -53,7 +53,7 @@ namespace Server
                     Console.WriteLine("Error: " + exp.Message);
             }
         }
-        public static void GetStatus()
+         static void GetStatus()
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Count clients: {AllClients.Count}");
@@ -68,7 +68,7 @@ namespace Server
             
 
         }
-        public static void ConnectServer()
+         static void ConnectServer()
         {
             Console.ForegroundColor = ConsoleColor.White;
 
@@ -96,7 +96,7 @@ namespace Server
                 return;
             }
         }
-        public static void OnSettings()
+         static void OnSettings()
         {
             string Path = Directory.GetCurrentDirectory() + "/.config";
             string IpAddress = "";
@@ -162,7 +162,7 @@ namespace Server
                 streamWriter.Close();
             }
         }
-        public static void Help()
+         static void Help()
         {
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("Commands to the server: ");
