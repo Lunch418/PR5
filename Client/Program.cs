@@ -159,17 +159,17 @@ namespace Client
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("/config");
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(" - set initial settings ");
+            Console.WriteLine(" - set initial settings");
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("/connect");
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(" - connection to the server ");
+            Console.WriteLine(" - connect to the server ");
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("/status");
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(" - show list users ");
+            Console.WriteLine(" - show list users:");
         }
 
         public static void OnSettings()

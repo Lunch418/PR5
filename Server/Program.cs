@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
+
 
 namespace Server
 {
@@ -183,6 +183,7 @@ namespace Server
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(" - set initial settings ");
 
+
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("/disconnect");
             Console.ForegroundColor = ConsoleColor.White;
@@ -192,6 +193,16 @@ namespace Server
             Console.Write("/status");
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(" - show list users ");
+
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("/ban");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(" - ban ");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("/unblock");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(" - unban ");
         }
 
         public static void OnSettings()
@@ -308,7 +319,7 @@ namespace Server
             }
             else
             {
-                Client c = AllClients.Find(x => x.Token == Command);
+                Classes.Client c = AllClients.Find(x => x.Token == Command);
                 return c != null ? "/connect" : "/disconnect";
             }
             return null;

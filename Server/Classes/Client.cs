@@ -6,15 +6,16 @@ using System.Threading.Tasks;
 
 namespace Server.Classes
 {
-    class Client
+     class Client
     {
         public string Token { get; set; }
         public DateTime DateConnect { get; set; }
-        public Client() {
+        public Client()
+        {
             Random random = new Random();
             string Chars = "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasfghjklzxcvbnm0123456789";
 
-            Token = new string (Enumerable.Repeat(Chars, 15).Select(x => x[random.Next(Chars.Length)]).ToArray());
+            Token = new string(Enumerable.Repeat(Chars, 15).Select(x => x[random.Next(Chars.Length)]).ToArray());
             DateConnect = DateTime.Now;
         }
     }
