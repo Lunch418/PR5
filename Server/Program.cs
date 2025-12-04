@@ -43,9 +43,10 @@ namespace Server
                     if (ClientDuration > Duration)
                     {
                         Console.ForegroundColor = ConsoleColor.White;
-                        Console.WriteLine($"Client: {AllClients[iClient].Token} disconnect from server to timeout");
+                        Console.WriteLine($"Client: {AllClients[iClient].Token} (User: {AllClients[iClient].Login}) disconnected from server due to timeout");
 
                         AllClients.RemoveAt(iClient);
+                        iClient--; 
                     }
                 }
                 Thread.Sleep(1000);
@@ -169,17 +170,23 @@ namespace Server
             {
                 string Token = сommand.Replace("/disconnect", "").Trim();
                 Classes.Client DisconnectClient = AllClients.Find(x => x.Token == Token);
-                AllClients.Remove(DisconnectClient);
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write($"Client: {Token} disconnect from server ");
+                if (DisconnectClient != null)
+                {
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.WriteLine($"Client: {Token} (User: {DisconnectClient.Login}) disconnected from server");
+                    AllClients.Remove(DisconnectClient);
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Client with token {Token} not found");
+                }
             }
             catch (Exception exp)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Error: " + exp.Message);
             }
-
         }
 
         public static void Help()
@@ -305,12 +312,21 @@ namespace Server
                 if (user == null)
                     return "/auth_fail";
 
+                var existingClient = AllClients.FirstOrDefault(x => x.Login == login);
+                if (existingClient != null)
+                {
+
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.WriteLine($"User {login} already has active session: {existingClient.Token}");
+                    return existingClient.Token;
+                }
+
                 if (AllClients.Count < MaxClient)
                 {
                 
                     Classes.Client newClient = new Classes.Client(login);
                     AllClients.Add(newClient);
-                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"New client connection: {newClient.Token} (User: {login})");
 
                     return newClient.Token;
@@ -318,16 +334,16 @@ namespace Server
                 else
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"There is not enougt space on the license server");
+                    Console.WriteLine($"There is not enough space on the license server");
                     return "/limit";
                 }
             }
             else
             {
+              
                 Classes.Client c = AllClients.Find(x => x.Token == Command);
                 return c != null ? "/connect" : "/disconnect";
             }
-            return null;
         }
         public static void ConnectServer()
         {
