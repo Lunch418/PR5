@@ -59,12 +59,10 @@ namespace Server
             {
                 int Duration = (int)DateTime.Now.Subtract(Client.DateConnect).TotalSeconds;
                 Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine($"Client: {Client.Token}, time connection: {Client.DateConnect.ToString("HH:mm:ss dd.MM")}, " +
+                Console.WriteLine($"Client: {Client.Token}, User: {Client.Login}, time connection: {Client.DateConnect.ToString("HH:mm:ss dd.MM")}, " +
                     $"duration: {Duration}"
                     );
             }
-
-
         }
         public static void SetCommand()
         {
@@ -125,7 +123,6 @@ namespace Server
 
         public static void Ban(string command)
         {
-
             Console.Write("Login: ");
             string login = Console.ReadLine();
             if (string.IsNullOrEmpty(login))
@@ -151,8 +148,20 @@ namespace Server
             db.blackLists.Add(new BlackList { Login = login });
             db.SaveChanges();
 
+            var sessionsToDisconnect = AllClients.Where(c => c.Login == login).ToList();
+            foreach (var client in sessionsToDisconnect)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"Closing session for banned user {login}: {client.Token}");
+                AllClients.Remove(client);
+            }
+
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"User {login} added to blacklist");
+            if (sessionsToDisconnect.Count > 0)
+            {
+                Console.WriteLine($"Closed {sessionsToDisconnect.Count} active session(s)");
+            }
         }
         static void DisconnectServer(string сommand)
         {
@@ -163,7 +172,7 @@ namespace Server
                 AllClients.Remove(DisconnectClient);
 
                 Console.ForegroundColor = ConsoleColor.White;
-                Console.Write($"Client: {Token} disconnect from server");
+                Console.Write($"Client: {Token} disconnect from server ");
             }
             catch (Exception exp)
             {
@@ -279,8 +288,6 @@ namespace Server
 
         static string SetCommandClient(string Command)
         {
-
-
             if (Command.StartsWith("/connect"))
             {
                 string[] parts = Command.Split(' ');
@@ -300,13 +307,13 @@ namespace Server
 
                 if (AllClients.Count < MaxClient)
                 {
-                    Classes.Client newClient = new Classes.Client();
+                
+                    Classes.Client newClient = new Classes.Client(login);
                     AllClients.Add(newClient);
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"New client connection: " + newClient.Token);
+                    Console.WriteLine($"New client connection: {newClient.Token} (User: {login})");
 
                     return newClient.Token;
-
                 }
                 else
                 {
@@ -314,8 +321,6 @@ namespace Server
                     Console.WriteLine($"There is not enougt space on the license server");
                     return "/limit";
                 }
-
-
             }
             else
             {
